@@ -51,11 +51,13 @@ func NewAdapter(conn interface{}, opts ...Option) (*Adapter, error) {
 	for _, opt := range opts {
 		opt(a)
 	}
-	pool, err := createDatabase(a.dbName, conn)
-	if err != nil {
-		return nil, fmt.Errorf("pgxadapter.NewAdapter: %v", err)
+	if a.pool == nil {
+		pool, err := createDatabase(a.dbName, conn)
+		if err != nil {
+			return nil, fmt.Errorf("pgxadapter.NewAdapter: %v", err)
+		}
+		a.pool = pool
 	}
-	a.pool = pool
 	if !a.skipTableCreate {
 		if err := a.createTable(); err != nil {
 			a.pool.Close()
@@ -101,6 +103,12 @@ func WithTimeout(timeout time.Duration) Option {
 func WithSchema(s string) Option {
 	return func(a *Adapter) {
 		a.schema = s
+	}
+}
+
+func WithPool(pool *pgxpool.Pool) Option {
+	return func(a *Adapter) {
+		a.pool = pool
 	}
 }
 
